@@ -5,6 +5,7 @@ import com.example.jwtandwebsocket.common.constant.RespCode;
 import com.example.jwtandwebsocket.common.exception.MyAppException;
 import com.example.jwtandwebsocket.common.model.BaseResponse;
 import com.example.jwtandwebsocket.service.role.RoleService;
+import com.example.jwtandwebsocket.service.roleAsync.RoleAsyncService;
 import com.example.jwtandwebsocket.service.security.model.SecurityUser;
 import com.example.jwtandwebsocket.service.user.UserService;
 import com.example.jwtandwebsocket.utils.exceptionHandler.MyExceptionHandler;
@@ -28,6 +29,9 @@ public abstract class BaseController {
 
     @Autowired
     protected RoleService roleService;
+
+    @Autowired
+    protected RoleAsyncService roleAsyncService;
 
     @ExceptionHandler(Exception.class)
     public void handle(Exception ex, HttpServletResponse response) {

@@ -4,11 +4,18 @@ import com.example.jwtandwebsocket.common.constant.AuthorityConstant;
 import com.example.jwtandwebsocket.common.exception.MyAppException;
 import com.example.jwtandwebsocket.dto.role.RoleDto;
 import com.example.jwtandwebsocket.service.security.model.SecurityUser;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.DeferredResult;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,6 +45,32 @@ public class RoleController extends BaseController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRole(@PathVariable(value = "id") UUID roleId) throws MyAppException {
         return new ResponseEntity<>(checkNullAndToBaseResp(roleService.deleteById(roleId)), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyAuthority(\"" + AuthorityConstant.ROLE_VIEW + "\")")
+    @GetMapping("/all-async")
+    public DeferredResult<ResponseEntity<?>> getAllAsync() throws MyAppException {
+
+        DeferredResult<ResponseEntity<?>> result = new DeferredResult<>();
+
+        ListenableFuture<List<RoleDto>> data = roleAsyncService.findAllAsync();
+        Futures.addCallback(data, new FutureCallback<List<RoleDto>>() {
+            @SneakyThrows
+            @Override
+            public void onSuccess(List<RoleDto> roleDtos) {
+                result.setResult(new ResponseEntity<>(checkNullAndToBaseResp(roleDtos), HttpStatus.OK));
+            }
+
+            @SneakyThrows
+            @Override
+            public void onFailure(Throwable throwable) {
+                throw throwable;
+            }
+        }, MoreExecutors.directExecutor());
+
+        System.out.println("Return data to user");
+
+        return result;
     }
 
 }
