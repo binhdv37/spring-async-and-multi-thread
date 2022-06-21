@@ -1,12 +1,5 @@
-# spring-jwt-app-base-project
-- This is a spring boot base app with jwt authentication.
-
-# Init db data:
-- Generate db schema by code :
-  spring.jpa.hibernate.ddl-auto = create
-- Insert init data:
-  Run sql file : resources/sql/initDb.sql
-  
-# About project structure:
-- This project follow some common design pattern like MVC, DAO, DTO, ...
-    
+# Based on "spring-jwt-app-base-project" project
+# What this project does
+- Cover some async, multi thread technique in java, like following:
+  + Async REST API in spring with DefferedResult
+  + Guava concurrent: Futures, ListenableFuture, CompletableFuture, Executor, ExecutorService, ThreadPoolExecutor,...
