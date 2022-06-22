@@ -1,6 +1,7 @@
 package com.example.jwtandwebsocket.controller;
 
 import com.example.jwtandwebsocket.common.constant.AuthorityConstant;
+import com.example.jwtandwebsocket.common.constant.RespCode;
 import com.example.jwtandwebsocket.common.exception.MyAppException;
 import com.example.jwtandwebsocket.dto.role.RoleDto;
 import com.example.jwtandwebsocket.service.security.model.SecurityUser;
@@ -8,7 +9,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,24 +51,34 @@ public class RoleController extends BaseController {
     @GetMapping("/all-async")
     public DeferredResult<ResponseEntity<?>> getAllAsync() throws MyAppException {
 
-        DeferredResult<ResponseEntity<?>> result = new DeferredResult<>();
-
         ListenableFuture<List<RoleDto>> data = roleAsyncService.findAllAsync();
+
+        DeferredResult<ResponseEntity<?>> result = new DeferredResult<>();
+        result.onTimeout(() -> {
+            System.out.println("Time out boyz");
+            result.setErrorResult(
+                    toErrorResponse(new MyAppException("Time out boyz!", RespCode.INTERNAL))
+            );
+            data.cancel(true);
+        });
+
         Futures.addCallback(data, new FutureCallback<List<RoleDto>>() {
-            @SneakyThrows
             @Override
             public void onSuccess(List<RoleDto> roleDtos) {
-                result.setResult(new ResponseEntity<>(checkNullAndToBaseResp(roleDtos), HttpStatus.OK));
+                System.out.println("On success");
+                result.setResult(new ResponseEntity<>(toBaseResponse(roleDtos), HttpStatus.OK));
             }
 
-            @SneakyThrows
             @Override
             public void onFailure(Throwable throwable) {
-                throw throwable;
+                System.out.println("On failure");
+                result.setErrorResult(
+                        toErrorResponse(new MyAppException(throwable.getMessage(), throwable, RespCode.INTERNAL))
+                );
             }
-        }, MoreExecutors.directExecutor());
+        }, MoreExecutors.directExecutor()); // execute in current thread
 
-        System.out.println("Return data to user");
+        System.out.println("Return deffered result, free request thread");
 
         return result;
     }

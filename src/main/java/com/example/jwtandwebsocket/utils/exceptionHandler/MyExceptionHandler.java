@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -35,31 +36,40 @@ public class MyExceptionHandler {
     @ExceptionHandler(Exception.class)
     public void handle(Exception ex, HttpServletResponse response) {
         try {
-            BaseResponse apiResponse = new BaseResponse();
-            if (ex instanceof MyAppException) {
-                MyAppException myAppException = (MyAppException) ex;
-                int respCode = myAppException.getRespCode().value();
-                int statusCode = respCodeToStatus(myAppException.getRespCode()).value();
-                String message = ex.getMessage();
-
-                apiResponse.setRespCode(respCode);
-                apiResponse.setStatusCode(statusCode);
-                apiResponse.setRespMessage(message);
-                response.setStatus(statusCode);
-            } else {
-                int respCode = RespCode.INTERNAL.value();
-                int statusCode = respCodeToStatus(RespCode.INTERNAL).value();
-                String message = ex.getMessage();
-
-                apiResponse.setRespCode(respCode);
-                apiResponse.setStatusCode(statusCode);
-                apiResponse.setRespMessage(message);
-                response.setStatus(statusCode);
-            }
+            BaseResponse apiResponse = getBaseErrorResponse(ex);
+            response.setStatus(apiResponse.getStatusCode());
             objectMapper.writeValue(response.getWriter(), apiResponse);
         } catch (Exception e) {
             log.error("Cannot handle exception: ", ex);
         }
+    }
+
+    public ResponseEntity<?> toErrorResponse(Exception ex) {
+        BaseResponse response = getBaseErrorResponse(ex);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatusCode()));
+    }
+
+    private BaseResponse getBaseErrorResponse(Exception ex) {
+        BaseResponse apiResponse = new BaseResponse();
+        if (ex instanceof MyAppException) {
+            MyAppException myAppException = (MyAppException) ex;
+            int respCode = myAppException.getRespCode().value();
+            int statusCode = respCodeToStatus(myAppException.getRespCode()).value();
+            String message = ex.getMessage();
+
+            apiResponse.setRespCode(respCode);
+            apiResponse.setStatusCode(statusCode);
+            apiResponse.setRespMessage(message);
+        } else {
+            int respCode = RespCode.INTERNAL.value();
+            int statusCode = respCodeToStatus(RespCode.INTERNAL).value();
+            String message = ex.getMessage();
+
+            apiResponse.setRespCode(respCode);
+            apiResponse.setStatusCode(statusCode);
+            apiResponse.setRespMessage(message);
+        }
+        return apiResponse;
     }
 
     private HttpStatus respCodeToStatus(RespCode respCode) {

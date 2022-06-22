@@ -12,6 +12,7 @@ import com.example.jwtandwebsocket.utils.exceptionHandler.MyExceptionHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +39,10 @@ public abstract class BaseController {
         myExceptionHandler.handle(ex, response);
     }
 
+    protected ResponseEntity<?> toErrorResponse(Exception ex) {
+        return myExceptionHandler.toErrorResponse(ex);
+    }
+
     protected SecurityUser getCurrentUser() throws MyAppException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof SecurityUser) {
@@ -54,7 +59,7 @@ public abstract class BaseController {
         return t;
     }
 
-    protected <T> BaseResponse<T> toBaseResponse(T data) throws MyAppException {
+    protected <T> BaseResponse<T> toBaseResponse(T data) {
         return new BaseResponse<>(RespCode.SUCCESS.value(), CommonRespMessage.SUCCESS, HttpStatus.OK.value(), data);
     }
 
